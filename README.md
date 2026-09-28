@@ -150,6 +150,21 @@ Testnet wallets: use faucet tBOT (10/24h). Chain `968`, RPC `https://rpc.bohr.li
 
 Contracts typecheck is not a separate job (Hardhat runs TS in transpile mode for tests); the test run is the gate. Dependabot (`.github/dependabot.yml`) opens grouped weekly updates for `contracts`/`keeper`/`frontend` and GitHub Actions.
 
+## Deploy the frontend
+
+The dApp is a static Vite build. `frontend/vercel.json` pins the framework, build (`npm run build`), output (`dist`), and SPA rewrites.
+
+```bash
+cd frontend
+npx vercel login          # authenticate yourself
+npx vercel                # preview
+npx vercel --prod         # production
+```
+
+Or import the repo in the Vercel dashboard: root directory `frontend`, framework preset Vite, output `dist`. The two `VITE_*` values (contract address, RPC URL — both public) come from `frontend/.env.example`; no secrets are required, and `contracts/.env` / `keeper/.env` are never in the frontend build. Point `VITE_DCA_ADDRESS` at whichever deployment the UI should read.
+
+Deploying is safe to do without the keeper or deployer keys — the frontend only reads public chain state.
+
 ## Status
 
 Testnet-scoped. Not audited. Admin functions (`setMinInterval`, `setKeeperFeeBps`, `setPaused`) are currently single-key owner; move to multisig before mainnet. `keeperFeeBps` encourages third-party execution but does not guarantee liveness; run your own keeper in production.
