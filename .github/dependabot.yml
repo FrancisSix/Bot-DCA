@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /contracts
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      hardhat-toolbox:
+        patterns: ['@nomicfoundation/*']
+      dev-deps:
+        dependency-type: development
+
+  - package-ecosystem: npm
+    directory: /keeper
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      viem:
+        patterns: ['viem']
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      wagmi-ecosystem:
+        patterns: ['wagmi', 'viem', '@tanstack/react-query']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
