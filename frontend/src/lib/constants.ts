@@ -1,0 +1,6 @@
+export const NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+export const BOT_DCA = (import.meta.env.VITE_DCA_ADDRESS ??
+  "0x0000000000000000000000000000000000000000") as `0x${string}`;
+export const ROUTER = "0xD6425a02f0845B8D99e349C34D2E7A576E177345";
+export const WBOT = "0xD5452816194a3784dBa983426cCe7c122F4abd30";
+export const USDT = "0x75edC9335175Fc0552D51D48439F229c10420fe3";

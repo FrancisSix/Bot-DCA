@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="botg" x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d9488"/>
+      <stop offset="0.55" stop-color="#10A37F"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#botg)"/>
+  <g transform="translate(15,15) scale(1.42)" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="23 4 23 10 17 10"/>
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+  </g>
+</svg>
