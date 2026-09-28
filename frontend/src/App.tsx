@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   useAccount,
   useBalance,
@@ -10,8 +10,8 @@ import {
   useWriteContract,
 } from "wagmi";
 import { formatUnits, parseEther, maxUint256 } from "viem";
-import { BOT_DCA, NATIVE, USDT, WBOT, ROUTER } from "./lib/constants";
-import { BOT_DCA_ABI, ERC20_ABI, ROUTER_ABI } from "./lib/abi";
+import { BOT_DCA, NATIVE, USDT, WBOT, ROUTER, V3_FACTORY } from "./lib/constants";
+import { BOT_DCA_ABI, ERC20_ABI, ROUTER_ABI, V3_ABI } from "./lib/abi";
 import logo from "./logo.svg";
 import botchainLogo from "./botchain-logo.png";
 
@@ -136,6 +136,16 @@ export default function App() {
     args: [address as `0x${string}`],
     query: { enabled: !!address, refetchInterval: 15000 },
   });
+  // Market price from the BDEX V3 0.30% pool (deepest; matches explorer).
+  const { data: v3Pool } = useReadContract({
+    address: V3_FACTORY,
+    abi: V3_ABI,
+    functionName: "getPool",
+    args: [WBOT, USDT, 3000],
+    query: { refetchInterval: 15000 },
+  });
+
+  // V2 route price: what the contract actually gets when it executes.
   const { data: priceData } = useReadContract({
     address: ROUTER,
     abi: ROUTER_ABI,
@@ -144,8 +154,45 @@ export default function App() {
     query: { refetchInterval: 15000 },
   });
 
+  // V3 pool internals -> market price (USDT per BOT).
+  const { data: slot0 } = useReadContract({
+    address: v3Pool as `0x${string}`,
+    abi: V3_ABI,
+    functionName: "slot0",
+    query: { enabled: !!v3Pool, refetchInterval: 15000 },
+  });
+  const { data: token0 } = useReadContract({
+    address: v3Pool as `0x${string}`,
+    abi: V3_ABI,
+    functionName: "token0",
+    query: { enabled: !!v3Pool, refetchInterval: 15000 },
+  });
+
+  // USDT per BOT = (sqrtPriceX96^2 / 2^192), decimal-adjusted for token ordering.
+  const marketPrice = useMemo(() => {
+    if (!slot0 || !token0) return null;
+    const sp = (slot0 as readonly unknown[])[0] as bigint;
+    if (!sp) return null;
+    const Q96 = 2n ** 96n;
+    const raw = Number((sp * sp) / (Q96 * Q96));
+    if (!Number.isFinite(raw) || raw <= 0) return null;
+    const usdPerBot = token0.toLowerCase() === WBOT.toLowerCase() ? raw * 1e12 : (1 / raw) * 1e12;
+    return Number.isFinite(usdPerBot) && usdPerBot > 0 ? usdPerBot : null;
+  }, [slot0, token0]);
+
   const usdtBal = usdtRaw ? formatUnits(usdtRaw as bigint, 6) : "0";
-  const price = priceData ? (Number((priceData as bigint[])[1]) / 1e6).toFixed(4) : "—";
+
+  // Price the contract's V2 execution would actually get (1 BOT -> USDT).
+  const routePrice = priceData ? Number((priceData as bigint[])[1]) / 1e6 : null;
+  // Prefer the V3 market price; fall back to the V2 route quote if V3 is unavailable.
+  const displayPrice = marketPrice ?? routePrice;
+  const price = displayPrice != null ? displayPrice.toFixed(4) : "—";
+  // Divergence between market and the V2 route the contract uses.
+  const routePenalty =
+    marketPrice != null && routePrice != null && marketPrice > 0
+      ? (routePrice - marketPrice) / marketPrice
+      : null;
+  const routeWarning = routePenalty != null && routePenalty > 0.02;
 
   const load = useCallback(async () => {
     if (!publicClient || !address) return;
@@ -393,6 +440,14 @@ export default function App() {
                 {price !== "—" ? `$${price}` : "—"} <span style={{ color: "var(--faint)", fontSize: 13, fontWeight: 500 }}>/ BOT</span>
               </span>
             </div>
+            {routeWarning && (
+              <div className="stat">
+                <span className="stat-label">V2 route vs market</span>
+                <span className="stat-value" style={{ color: "var(--amber)" }}>
+                  +{(routePenalty! * 100).toFixed(1)}% worse
+                </span>
+              </div>
+            )}
             <div className="stat">
               <span className="stat-label">Your positions</span>
               <span className="stat-value">{positions.length}</span>

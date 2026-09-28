@@ -24,3 +24,10 @@ export const ROUTER_ABI = parseAbi([
   "function WETH() view returns (address)",
 ]);
 
+// BDEX V3: used for the *market* price (what the explorer shows).
+export const V3_ABI = parseAbi([
+  "function getPool(address tokenA, address tokenB, uint24 fee) view returns (address)",
+  "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)",
+  "function token0() view returns (address)",
+]);
+
