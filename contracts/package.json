@@ -10,12 +10,12 @@
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network botchain-mainnet"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "@openzeppelin/contracts": "^5.0.2",
-    "@types/node": "^20.11.0",
-    "dotenv": "^16.4.5",
-    "hardhat": "^2.22.2",
+    "@types/node": "^26.6.2",
+    "dotenv": "^18.0.4",
+    "hardhat": "^3.18.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^7.0.2"
   }
 }
