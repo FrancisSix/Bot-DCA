@@ -1,4 +1,4 @@
-# bot-dca
+﻿# bot-dca
 
 [![CI](https://github.com/FrancisSix/Bot-DCA/actions/workflows/ci.yml/badge.svg)](https://github.com/FrancisSix/Bot-DCA/actions/workflows/ci.yml)
 
@@ -8,7 +8,7 @@ A user escrows a `BOT`/`USDT` budget in `BotDCA.sol`. A permissionless keeper sw
 `amountPerInterval` of `tokenIn` every `intervalSeconds` until the budget is spent.
 Every swap is recorded on-chain and readable via `getExecutions(id)`.
 
-Contract (testnet): [`0x71D3E22e60Fa9f6f2d6A3347c7Bb49D25da9FA98`](https://scan.bohr.life/address/0x71D3E22e60Fa9f6f2d6A3347c7Bb49D25da9FA98?tab=contract) · chain `968` (`https://rpc.bohr.life`).
+Contract (testnet): [`0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895`](https://scan.bohr.life/address/0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895?tab=contract) Â· chain `968` (`https://rpc.bohr.life`).
 
 ## Problem
 
@@ -21,24 +21,25 @@ Contract (testnet): [`0x71D3E22e60Fa9f6f2d6A3347c7Bb49D25da9FA98`](https://scan.
 
 `BotDCA.sol` is a self-contained DCA primitive:
 
-- Budget escrowed at creation — no custody beyond the user's own deposit.
-- `execute(id)` is permissionless — anyone can run a due interval.
-- `keeperFeeBps` (0.1%) pays whoever executes — the network funds its own automation.
-- `minOut` derived on-chain (`getAmountsOut` → `slippageBps` ceiling) — keeper can't push worse-than-ceiling fills.
-- Every swap appended to `Execution[]` — readable from `getExecutions(id)`, no indexer required.
-- `executeWithPath(id, path)` accepts a multi-hop V2 route with endpoint checks.
+- Budget escrowed at creation â€” no custody beyond the user's own deposit.
+- `execute(id)` is permissionless â€” anyone can run a due interval.
+- `keeperFeeBps` (0.1%) pays whoever executes â€” the network funds its own automation.
+- `minOut` derived on-chain â€” keeper can't push worse-than-ceiling fills.
+- **V3-first execution.** The BDEX V2 WBOT/USDT pool is materially mispriced vs. the V3 0.30% pool, so `execute()` routes through the V3 SwapRouter by default (`setVenue` flips it). `minOut` is priced from the V3 pool's `slot0` spot price (a pure view read â€” QuoterV2 can't be used on-chain because it returns its value by reverting).
+- Every swap appended to `Execution[]` â€” readable from `getExecutions(id)`, no indexer required.
+- `executeWithPath(id, path)` accepts a multi-hop V2 route with endpoint checks (used for V3-incompatible ERC20â†’ERC20 legs).
 - Low gas makes small, frequent buys viable (~$0.06/tx vs $1-5 on L1s).
 
 ## Architecture
 
 ```
 bot-dca/
-├── contracts/          Solidity + Hardhat
-│   ├── contracts/      BotDCA.sol, IUniswapV2Router02, mocks/
-│   ├── scripts/        deploy.ts, smoke.ts, e2e.ts
-│   └── test/           BotDCA.ts (9 tests)
-├── keeper/             Node + viem bot, polls isDue
-└── frontend/           Vite + React + wagmi dApp
+â”œâ”€â”€ contracts/          Solidity + Hardhat
+â”‚   â”œâ”€â”€ contracts/      BotDCA.sol, V2 router + V3 router/factory interfaces, mocks/
+â”‚   â”œâ”€â”€ scripts/        deploy.ts, init.ts, smoke.ts, e2e.ts
+â”‚   â””â”€â”€ test/           BotDCA.ts (10 tests)
+â”œâ”€â”€ keeper/             Node + viem bot, polls isDue
+â””â”€â”€ frontend/           Vite + React + wagmi dApp
 ```
 
 Frontend -> BotDCA.sol: createPosition / withdraw / cancel (write), positions / getExecutions (read)
@@ -59,7 +60,7 @@ BotDCA   -> BDEX V2 Router: swapExactTokensForTokens / swapExactETHForTokens / s
 `isDue(id)` / `preview(id)` / `positions(id)` / `getExecutions(id)` / `nextId`
 : Read helpers for scheduler decisions, UI display, full position struct, full execution history, and the next position id.
 
-Admin (owner): `setMinInterval` · `setMaxIntervals` · `setMaxSlippageBps` · `setKeeperFeeBps` · `setPaused`
+Admin (owner): `setMinInterval` Â· `setMaxIntervals` Â· `setMaxSlippageBps` Â· `setKeeperFeeBps` Â· `setPaused`
 
 
 Contract verified with `contracts/BotDCA.sol:BotDCA`, `solc 0.8.20+commit.a1b79de6`, optimizer on (200 runs), `evmVersion: paris`. Testnet constructor arg: V2 Router `0xD6425a02f0845B8D99e349C34D2E7A576E177345`.
@@ -139,14 +140,14 @@ Testnet wallets: use faucet tBOT (10/24h). Chain `968`, RPC `https://rpc.bohr.li
 
 ## CI
 
-`.github/workflows/ci.yml` — on every push/PR to `main` (concurrency-cancelled, `contents: read`):
+`.github/workflows/ci.yml` â€” on every push/PR to `main` (concurrency-cancelled, `contents: read`):
 
 | Job | Gate |
 |---|---|
-| `contracts` | `hardhat compile` + `hardhat test` (9 tests) |
+| `contracts` | `hardhat compile` + `hardhat test` (10 tests) |
 | `keeper` | `tsc --noEmit` |
 | `frontend` | `tsc --noEmit` + `vite build` |
-| `testnet-smoke` | keyless `smoke.ts` against testnet — asserts RPC, router/WBOT/USDT, live quote, and the deployed contract's `nextId` / admin settings / position history |
+| `testnet-smoke` | keyless `smoke.ts` against testnet â€” asserts RPC, router/WBOT/USDT, live quote, and the deployed contract's `nextId` / admin settings / position history |
 
 Contracts typecheck is not a separate job (Hardhat runs TS in transpile mode for tests); the test run is the gate. Dependabot (`.github/dependabot.yml`) opens grouped weekly updates for `contracts`/`keeper`/`frontend` and GitHub Actions.
 
@@ -161,9 +162,9 @@ npx vercel                # preview
 npx vercel --prod         # production
 ```
 
-Or import the repo in the Vercel dashboard: root directory `frontend`, framework preset Vite, output `dist`. The two `VITE_*` values (contract address, RPC URL — both public) come from `frontend/.env.example`; no secrets are required, and `contracts/.env` / `keeper/.env` are never in the frontend build. Point `VITE_DCA_ADDRESS` at whichever deployment the UI should read.
+Or import the repo in the Vercel dashboard: root directory `frontend`, framework preset Vite, output `dist`. The two `VITE_*` values (contract address, RPC URL â€” both public) come from `frontend/.env.example`; no secrets are required, and `contracts/.env` / `keeper/.env` are never in the frontend build. Point `VITE_DCA_ADDRESS` at whichever deployment the UI should read.
 
-Deploying is safe to do without the keeper or deployer keys — the frontend only reads public chain state.
+Deploying is safe to do without the keeper or deployer keys â€” the frontend only reads public chain state.
 
 ## Status
 
@@ -172,3 +173,4 @@ Testnet-scoped. Not audited. Admin functions (`setMinInterval`, `setKeeperFeeBps
 ## License
 
 MIT
+

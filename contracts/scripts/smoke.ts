@@ -27,7 +27,7 @@ const ADDRS: Record<number, { router: string; wbot: string; usdt: string }> = {
 // Optional: DCA contract to inspect. Falls back to the testnet deployment.
 const DCA =
   process.env.DCA_ADDRESS ??
-  "0x71D3E22e60Fa9f6f2d6A3347c7Bb49D25da9FA98";
+  "0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895";
 
 const DCA_ABI = [
   "function nextId() view returns (uint256)",
