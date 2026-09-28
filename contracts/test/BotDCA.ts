@@ -16,10 +16,27 @@ async function deploy() {
   const Token = await ethers.getContractFactory("MockERC20");
   const usdt = await Token.deploy("Tether USD", "USDT");
 
-  const DCA = await ethers.getContractFactory("BotDCA");
-  const dca = await DCA.deploy(await router.getAddress());
+  const V3Router = await ethers.getContractFactory("MockV3Router");
+  const v3router = await V3Router.deploy(await weth.getAddress());
+  const V3Factory = await ethers.getContractFactory("MockV3Factory");
+  const v3factory = await V3Factory.deploy();
 
-  return { owner, alice, keeper, weth, router, usdt, dca };
+  const DCA = await ethers.getContractFactory("BotDCA");
+  const dca = await DCA.deploy(
+    await router.getAddress(),
+    await v3router.getAddress(),
+    await v3factory.getAddress()
+  );
+
+  // Fund the mock V3 router so it can pay out native BOT (the real router holds inventory too).
+  // Top the owner back up first so repeated deploys in one test file never run dry.
+  await ethers.provider.send("hardhat_setBalance", [
+    owner.address,
+    ethers.toBeHex(ethers.parseEther("1000000")),
+  ]);
+  await owner.sendTransaction({ to: await v3router.getAddress(), value: ethers.parseEther("10000") });
+
+  return { owner, alice, keeper, weth, router, usdt, dca, v3router, v3factory };
 }
 
 async function increaseTime(seconds: number) {
@@ -28,12 +45,13 @@ async function increaseTime(seconds: number) {
 }
 
 describe("BotDCA", function () {
-  it("executes ERC20 -> ERC20 DCA and accrues tokenOut", async () => {
+  it("executes ERC20 -> ERC20 DCA and accrues tokenOut (V2 venue)", async () => {
     const { alice, usdt, weth, dca } = await deploy();
     const amount = ethers.parseEther("100");
     const total = ethers.parseEther("1000");
     await usdt.mint(alice.address, total);
     await usdt.connect(alice).approve(await dca.getAddress(), total);
+    await dca.setVenue(false, 3000); // V3 cannot deliver the wbot ERC-20; ERC20->ERC20 uses V2
 
     await dca.connect(alice).createPosition(
       await usdt.getAddress(), await weth.getAddress(), amount, HOUR, 10, 100
@@ -94,6 +112,7 @@ describe("BotDCA", function () {
     const total = ethers.parseEther("1000");
     await usdt.mint(alice.address, total);
     await usdt.connect(alice).approve(await dca.getAddress(), total);
+    await dca.setVenue(false, 3000);
 
     await dca.connect(alice).createPosition(
       await usdt.getAddress(), await weth.getAddress(), amount, HOUR, 10, 100
@@ -118,22 +137,44 @@ describe("BotDCA", function () {
     await expect(dca.execute(0)).to.be.revertedWith("not due");
   });
 
-  it("reverts when fill is below minOut (slippage protection)", async () => {
+  it("reverts when fill is below minOut (slippage protection, V2 venue)", async () => {
     const { alice, usdt, weth, dca, router } = await deploy();
     await usdt.mint(alice.address, ethers.parseEther("1000"));
     await usdt.connect(alice).approve(await dca.getAddress(), ethers.parseEther("1000"));
     await dca.connect(alice).createPosition(
       await usdt.getAddress(), await weth.getAddress(), ethers.parseEther("100"), HOUR, 10, 100
     );
+    await dca.setVenue(false, 3000); // force V2 so the V2 mock router's fill rate applies
     await router.setFillRate(ethers.parseEther("0.9")); // quote 1:1, fill 0.9:1
     await increaseTime(HOUR);
     await expect(dca.execute(0)).to.be.revertedWith("slippage");
+  });
+
+  it("defaults to the V3 venue and can be switched", async () => {
+    const { alice, usdt, dca } = await deploy();
+    expect(await dca.useV3()).to.equal(true); // default venue is V3
+    expect(await dca.v3FeeTier()).to.equal(3000);
+
+    const amount = ethers.parseEther("1");
+    const total = ethers.parseEther("10");
+    // V3 default: native BOT -> USDT (V3 wraps native to WETH9 on input)
+    await dca.connect(alice).createPosition(
+      NATIVE, await usdt.getAddress(), amount, HOUR, 10, 100, { value: total }
+    );
+    await increaseTime(HOUR);
+    await dca.execute(0);
+    expect((await dca.positions(0)).accruedTokenOut).to.equal(amount);
+
+    // owner can flip the venue
+    await dca.setVenue(true, 500);
+    expect(await dca.v3FeeTier()).to.equal(500);
   });
 
   it("pays keeper fee from tokenOut", async () => {
     const { alice, keeper, usdt, weth, dca } = await deploy();
     await usdt.mint(alice.address, ethers.parseEther("1000"));
     await usdt.connect(alice).approve(await dca.getAddress(), ethers.parseEther("1000"));
+    await dca.setVenue(false, 3000);
     await dca.connect(alice).createPosition(
       await usdt.getAddress(), await weth.getAddress(), ethers.parseEther("100"), HOUR, 10, 100
     );

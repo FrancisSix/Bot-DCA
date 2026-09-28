@@ -1,60 +1,71 @@
-import { ethers } from "hardhat";
+﻿import { ethers } from "hardhat";
 
+const DCA = process.env.DCA_ADDRESS ?? "0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895";
 const NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-const TESTNET_ROUTER = "0xD6425a02f0845B8D99e349C34D2E7A576E177345";
-const TESTNET_USDT = "0x75edC9335175Fc0552D51D48439F229c10420fe3";
+const USDT = "0x75edC9335175Fc0552D51D48439F229c10420fe3";
 
-const USDT_ABI = ["function balanceOf(address) view returns (uint256)", "function decimals() view returns (uint8)"];
+const DCA_ABI = [
+  "function createPosition(address,address,uint256,uint256,uint256,uint256) payable returns (uint256)",
+  "function execute(uint256) returns (uint256)",
+  "function getExecutions(uint256) view returns ((uint256,uint256,uint256)[])",
+  "function withdraw(uint256)",
+  "function nextId() view returns (uint256)",
+];
+const USDT_ABI = ["function approve(address,uint256) returns (bool)", "function balanceOf(address) view returns (uint256)"];
+const QUOTER_ABI = [
+  "function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96)) view returns (uint256)",
+];
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  const chainId = Number((await ethers.provider.getNetwork()).chainId);
-  if (chainId !== 968) throw new Error("Run with --network botchain-testnet");
+  const dca = new ethers.Contract(DCA, DCA_ABI, deployer);
+  const usdt = new ethers.Contract(USDT, USDT_ABI, deployer);
+  const quoter = new ethers.Contract("0x034A705b36067cff99ABf5C662Be881cBd8d0176", QUOTER_ABI, deployer);
 
-  const bot = await ethers.provider.getBalance(deployer.address);
-  console.log(`Deployer : ${deployer.address}`);
-  console.log(`BOT bal  : ${ethers.formatEther(bot)} BOT`);
+  const perInterval = ethers.parseUnits("1", 6); // 1 USDT per interval
+  const numIntervals = 3n;
+  const total = perInterval * numIntervals;
 
-  // 1. Deploy
-  const factory = await ethers.getContractFactory("BotDCA");
-  const dca = await factory.deploy(TESTNET_ROUTER);
-  await dca.waitForDeployment();
-  const dcaAddr = await dca.getAddress();
-  console.log(`BotDCA   : ${dcaAddr}`);
+  const bal = (await usdt.balanceOf(deployer.address)) as bigint;
+  if (bal < total) throw new Error(`need ${total} testnet USDT, have ${bal}`);
+  await (await usdt.approve(DCA, total)).wait();
 
-  // 2. Lower min interval to 0 (demo only, owner-only) so we can execute immediately.
-  await (await dca.setMinInterval(0)).wait();
-  console.log("minInterval -> 0");
+  // Market reference BEFORE the fill (V3 0.30% pool).
+  const quote = (await quoter.quoteExactInputSingle({
+    tokenIn: USDT,
+    tokenOut: "0xD5452816194a3784dBa983426cCe7c122F4abd30",
+    amountIn: perInterval,
+    fee: 3000,
+    sqrtPriceLimitX96: 0,
+  })) as bigint;
+  const botPerUsdt = Number(quote) / 1e18;
 
-  // 3. Create a BOT -> USDT DCA: 0.01 BOT per interval, 2 intervals.
-  const amountPerInterval = ethers.parseEther("0.01");
-  const numIntervals = 2n;
-  const total = amountPerInterval * numIntervals;
-  const usdt = new ethers.Contract(TESTNET_USDT, USDT_ABI, deployer);
+  const rc = await (await dca.createPosition(USDT, NATIVE, perInterval, 10, numIntervals, 1000)).wait();
+  const id = (await dca.nextId()) - 1n;
+  console.log(`position ${id} created (10s interval, ${numIntervals} intervals) tx=${rc?.hash}`);
 
-  await (await dca.createPosition(NATIVE, TESTNET_USDT, amountPerInterval, 0, numIntervals, 100, { value: total })).wait();
-  console.log(`Position 0 created (deposited ${ethers.formatEther(total)} BOT)`);
+  await new Promise((r) => setTimeout(r, 12_000));
+  await (await dca.execute(id)).wait();
 
-  // 4. Execute each interval (intervalSeconds = 0, so due immediately).
-  for (let i = 0; i < Number(numIntervals); i++) {
-    await (await dca.execute(0)).wait();
-    console.log(`executed interval ${i + 1}/${numIntervals}`);
-  }
+  const e = (await dca.getExecutions(id))[0];
+  const inNum = Number(e[1]) / 1e6;
+  const outNum = Number(e[2]) / 1e18;
+  const actualRate = inNum / outNum;
+  const quoteRate = 1 / botPerUsdt;
+  console.log(`fill: ${inNum.toFixed(6)} USDT -> ${outNum.toFixed(8)} BOT`);
+  console.log(`  actual rate      : ${actualRate.toFixed(4)} USDT/BOT`);
+  console.log(`  V3 quote (pre-fill): ${quoteRate.toFixed(4)} USDT/BOT`);
+  console.log(`  drift: ${(Math.abs(actualRate / quoteRate - 1) * 100).toFixed(2)}%  (0.30% pool fee + 0.10% keeper + impact)`);
 
-  const pos = await dca.positions(0);
-  console.log(`accrued tokenOut: ${pos.accruedTokenOut.toString()} (raw USDT)`);
-
-  // 5. Withdraw USDT.
-  const before = await usdt.balanceOf(deployer.address);
-  await (await dca.withdraw(0)).wait();
-  const after = await usdt.balanceOf(deployer.address);
-  console.log(`Withdrew: ${ethers.formatUnits(after - before, 6)} USDT`);
-
-  console.log(`\nDCA_ADDRESS=${dcaAddr}`);
-  console.log(`E2E OK ✅`);
+  await (await dca.withdraw(id)).wait();
+  console.log("withdrawn OK");
+  console.log("\nE2E OK (V3 venue)");
 }
 
 main().catch((err) => {
   console.error(err);
   process.exitCode = 1;
 });
+
+
+
