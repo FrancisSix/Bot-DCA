@@ -10,7 +10,10 @@
     "contracts:deploy:testnet": "cd contracts && npx hardhat run scripts/deploy.ts --network botchain-testnet",
     "contracts:deploy:mainnet": "cd contracts && npx hardhat run scripts/deploy.ts --network botchain-mainnet",
     "keeper:start": "cd keeper && npm run start",
+    "keeper:typecheck": "cd keeper && npm run typecheck",
     "frontend:dev": "cd frontend && npm run dev",
-    "frontend:build": "cd frontend && npm run build"
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:typecheck": "cd frontend && npm run typecheck",
+    "typecheck": "cd keeper && npm run typecheck && cd ../frontend && npm run typecheck"
   }
 }
