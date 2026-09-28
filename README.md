@@ -1,5 +1,7 @@
 # bot-dca
 
+[![CI](https://github.com/FrancisSix/Bot-DCA/actions/workflows/ci.yml/badge.svg)](https://github.com/FrancisSix/Bot-DCA/actions/workflows/ci.yml)
+
 Permissionless dollar-cost averaging on BOT Chain (EVM L1, 0.75s blocks, ~$0.06 gas).
 
 A user escrows a `BOT`/`USDT` budget in `BotDCA.sol`. A permissionless keeper swaps
@@ -134,6 +136,19 @@ cd frontend && npm run dev   # http://localhost:5173
 ```
 
 Testnet wallets: use faucet tBOT (10/24h). Chain `968`, RPC `https://rpc.bohr.life`.
+
+## CI
+
+`.github/workflows/ci.yml` — on every push/PR to `main` (concurrency-cancelled, `contents: read`):
+
+| Job | Gate |
+|---|---|
+| `contracts` | `hardhat compile` + `hardhat test` (9 tests) |
+| `keeper` | `tsc --noEmit` |
+| `frontend` | `tsc --noEmit` + `vite build` |
+| `testnet-smoke` | keyless `smoke.ts` against testnet — asserts RPC, router/WBOT/USDT, live quote, and the deployed contract's `nextId` / admin settings / position history |
+
+Contracts typecheck is not a separate job (Hardhat runs TS in transpile mode for tests); the test run is the gate. Dependabot (`.github/dependabot.yml`) opens grouped weekly updates for `contracts`/`keeper`/`frontend` and GitHub Actions.
 
 ## Status
 
