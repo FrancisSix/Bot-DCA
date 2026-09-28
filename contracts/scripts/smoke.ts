@@ -24,6 +24,19 @@ const ADDRS: Record<number, { router: string; wbot: string; usdt: string }> = {
   },
 };
 
+// Optional: DCA contract to inspect. Falls back to the testnet deployment.
+const DCA =
+  process.env.DCA_ADDRESS ??
+  "0x71D3E22e60Fa9f6f2d6A3347c7Bb49D25da9FA98";
+
+const DCA_ABI = [
+  "function nextId() view returns (uint256)",
+  "function minInterval() view returns (uint256)",
+  "function keeperFeeBps() view returns (uint256)",
+  "function positions(uint256) view returns (address owner, address tokenIn, address tokenOut, uint256 amountPerInterval, uint256 intervalSeconds, uint256 numIntervals, uint256 intervalsExecuted, uint256 lastExecutedAt, uint256 totalDeposited, uint256 accruedTokenOut, uint256 slippageBps, bool active)",
+  "function getExecutions(uint256 id) view returns ((uint256 timestamp, uint256 amountIn, uint256 amountOut)[])",
+];
+
 async function main() {
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
   const a = ADDRS[chainId];
@@ -50,6 +63,21 @@ async function main() {
     console.log(`quote: 1 USDT -> ${ethers.formatEther(out[1])} WBOT`);
   } catch (e) {
     console.log("quote: USDT/WBOT pair may not exist yet (no liquidity) — skipping.");
+  }
+
+  // Deployed DCA contract, if deployed on this chain.
+  const code = await ethers.provider.getCode(DCA);
+  if (code === "0x") {
+    console.log(`DCA ${DCA}: not deployed on chain ${chainId} — skipping.`);
+  } else {
+    const dca = new ethers.Contract(DCA, DCA_ABI, ethers.provider);
+    const nextId = (await dca.nextId()) as bigint;
+    console.log(`DCA ${DCA}: deployed. nextId=${nextId.toString()} minInterval=${(await dca.minInterval()).toString()}s keeperFeeBps=${(await dca.keeperFeeBps()).toString()}`);
+    if (nextId > 0n) {
+      const p = await dca.positions(0);
+      const exs = (await dca.getExecutions(0)) as readonly (readonly [bigint, bigint, bigint])[];
+      console.log(`  position 0: exec=${p[6]}/${p[5]} accrued=${p[9].toString()} history=${exs.length}`);
+    }
   }
 
   console.log(`\nSmoke OK ✅`);
