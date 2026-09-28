@@ -36,7 +36,7 @@ Contract (testnet): [`0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895`](https://scan.
 bot-dca/
 â”œâ”€â”€ contracts/          Solidity + Hardhat
 â”‚   â”œâ”€â”€ contracts/      BotDCA.sol, V2 router + V3 router/factory interfaces, mocks/
-â”‚   â”œâ”€â”€ scripts/        deploy.ts, init.ts, smoke.ts, e2e.ts
+â”‚   â”œâ”€â”€ scripts/        deploy.ts, init.ts, smoke.ts, e2e.ts, verify.ts
 â”‚   â””â”€â”€ test/           BotDCA.ts (10 tests)
 â”œâ”€â”€ keeper/             Node + viem bot, polls isDue
 â””â”€â”€ frontend/           Vite + React + wagmi dApp
@@ -63,7 +63,7 @@ BotDCA   -> BDEX V2 Router: swapExactTokensForTokens / swapExactETHForTokens / s
 Admin (owner): `setMinInterval` Â· `setMaxIntervals` Â· `setMaxSlippageBps` Â· `setKeeperFeeBps` Â· `setPaused`
 
 
-Contract verified with `contracts/BotDCA.sol:BotDCA`, `solc 0.8.20+commit.a1b79de6`, optimizer on (200 runs), `evmVersion: paris`. Testnet constructor arg: V2 Router `0xD6425a02f0845B8D99e349C34D2E7A576E177345`.
+Source verified & published on BOTScan (`is_fully_verified: true`). Compiler: `solc 0.8.20+commit.a1b79de6`, optimizer on (200 runs), `evmVersion: paris`. Constructor args: V2 Router `0xD6425a02f0845B8D99e349C34D2E7A576E177345`, V3 SwapRouter `0x07032d47A1b9f8460cBeE9dC17c1d3E438693929`, V3 factory `0x1C51c173323ec11BB4e3C4fD2314c225Dc4b5419`.
 
 Live admin settings on the deployed contract: `minInterval = 10s`, `keeperFeeBps = 10` (0.1%), `maxSlippageBps = 1000` (10%).
 
@@ -72,6 +72,8 @@ Testnet assets:
 - USDT (6dp): `0x75edC9335175Fc0552D51D48439F229c10420fe3`
 - WBOT (18dp): `0xD5452816194a3784dBa983426cCe7c122F4abd30`
 - V2 Router02: `0xD6425a02f0845B8D99e349C34D2E7A576E177345`
+- V3 SwapRouter: `0x07032d47A1b9f8460cBeE9dC17c1d3E438693929`
+- V3 factory: `0x1C51c173323ec11BB4e3C4fD2314c225Dc4b5419`
 - Faucet: https://faucet.botchain.ai/basic (10 tBOT / 24h)
 
 ## Notes
@@ -173,4 +175,6 @@ Testnet-scoped. Not audited. Admin functions (`setMinInterval`, `setKeeperFeeBps
 ## License
 
 MIT
+
+
 
