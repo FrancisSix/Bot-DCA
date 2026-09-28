@@ -1,0 +1,16 @@
+{
+  "name": "bot-dca",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dollar-cost averaging on BOT Chain — smart contract + keeper + dApp",
+  "scripts": {
+    "contracts:compile": "cd contracts && npx hardhat compile",
+    "contracts:test": "cd contracts && npx hardhat test",
+    "contracts:smoke": "cd contracts && npx hardhat run scripts/smoke.ts --network botchain-testnet",
+    "contracts:deploy:testnet": "cd contracts && npx hardhat run scripts/deploy.ts --network botchain-testnet",
+    "contracts:deploy:mainnet": "cd contracts && npx hardhat run scripts/deploy.ts --network botchain-mainnet",
+    "keeper:start": "cd keeper && npm run start",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build"
+  }
+}
