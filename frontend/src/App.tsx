@@ -141,7 +141,7 @@ export default function App() {
     abi: ROUTER_ABI,
     functionName: "getAmountsOut",
     args: [parseEther("1"), [WBOT, USDT]],
-    query: { refetchInterval: 30000 },
+    query: { refetchInterval: 15000 },
   });
 
   const usdtBal = usdtRaw ? formatUnits(usdtRaw as bigint, 6) : "0";
@@ -235,11 +235,12 @@ export default function App() {
       : null;
   const estOutputLabel = estOutput != null ? trimAmount(String(estOutput)) : null;
 
+  const hasAddress = !!address;
   const balanceNum = direction === "in"
     ? Math.max(0, Number(botBalance?.formatted ?? "0") - 0.01)
     : Number(usdtBal);
-  const insufficient = totalNum > balanceNum;
-  const canCreate = amountNum > 0 && !insufficient;
+  const insufficient = hasAddress && totalNum > balanceNum;
+  const canCreate = hasAddress && amountNum > 0 && !insufficient;
 
   const slippageBps = Math.max(1, Math.min(1000, Math.round(Number(slippage || "0") * 100)));
 
@@ -387,8 +388,10 @@ export default function App() {
           </p>
           <div className="stats">
             <div className="stat">
-              <span className="stat-label">BOT price</span>
-              <span className="stat-value">${price} <span style={{ color: "var(--faint)", fontSize: 13, fontWeight: 500 }}>/ BOT</span></span>
+              <span className="stat-label">BOT price · live</span>
+              <span className="stat-value">
+                {price !== "—" ? `$${price}` : "—"} <span style={{ color: "var(--faint)", fontSize: 13, fontWeight: 500 }}>/ BOT</span>
+              </span>
             </div>
             <div className="stat">
               <span className="stat-label">Your positions</span>
@@ -434,8 +437,12 @@ export default function App() {
                 </span>
               </div>
               <span className="field-hint">
-                Balance: {direction === "in" ? `${botBalance?.formatted ?? "0"} BOT` : `${usdtBal} USDT`}{" "}
-                <button type="button" onClick={setMax}>MAX</button>
+                {hasAddress
+                  ? `Balance: ${direction === "in" ? `${botBalance?.formatted ?? "0"} BOT` : `${usdtBal} USDT`}`
+                  : "Connect wallet to check balance"}{" "}
+                {hasAddress && (
+                  <button type="button" onClick={setMax}>MAX</button>
+                )}
               </span>
             </label>
 
