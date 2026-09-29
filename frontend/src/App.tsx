@@ -330,8 +330,12 @@ export default function App() {
       pushToast(successMsg, "success");
       load();
     } catch (e: any) {
+      // Surface the real reason so failures are diagnosable instead of a generic "failed".
       const rejected = e?.code === 4001 || String(e?.shortMessage || "").toLowerCase().includes("rejected");
-      pushToast(rejected ? "Transaction rejected" : "Transaction failed", "error");
+      const reason =
+        e?.shortMessage || e?.reason || e?.details || e?.message || String(e);
+      console.error("[tx]", { fn: successMsg, error: e });
+      pushToast(rejected ? "Transaction rejected" : `Failed: ${reason.slice(0, 140)}`, "error");
     }
   }
 
