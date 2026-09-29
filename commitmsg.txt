@@ -1,5 +1,0 @@
-﻿fix(frontend): surface the real tx revert reason instead of a generic failure
-
-The dApp swallowed write errors and always toasted 'Transaction failed', which made
-failures undiagnosable. Now logs the full error to the console and shows the
-actual shortMessage/reason/details in the toast.
