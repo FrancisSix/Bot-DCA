@@ -10,7 +10,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { formatUnits, parseEther, parseUnits, maxUint256 } from "viem";
-import { BOT_DCA, NATIVE, USDT, WBOT, ROUTER, V3_FACTORY } from "./lib/constants";
+import { BOT_DCA, DCA_ADDRESS_IS_FALLBACK, NATIVE, USDT, WBOT, ROUTER, V3_FACTORY } from "./lib/constants";
 import { BOT_DCA_ABI, ERC20_ABI, ROUTER_ABI, V3_ABI } from "./lib/abi";
 import logo from "./logo.svg";
 import botchainLogo from "./botchain-logo.png";
@@ -707,6 +707,18 @@ export default function App() {
             <a href="https://dev-docs.botchain.ai" target="_blank" rel="noreferrer">Docs</a>
             <a href="https://scan.bohr.life" target="_blank" rel="noreferrer">Explorer</a>
             <a href="https://www.botchain.ai" target="_blank" rel="noreferrer">BOT Chain</a>
+          </div>
+          <div className="footer-note" style={{ flexBasis: "100%", justifyContent: "center" }}>
+            <span>DCA contract</span>
+            <a
+              href={`https://scan.bohr.life/address/${BOT_DCA}`}
+              target="_blank"
+              rel="noreferrer"
+              title={DCA_ADDRESS_IS_FALLBACK ? "VITE_DCA_ADDRESS missing/invalid — using the built-in testnet address" : BOT_DCA}
+            >
+              {shortAddr(BOT_DCA)}
+            </a>
+            {DCA_ADDRESS_IS_FALLBACK && <span className="net-badge warn">default</span>}
           </div>
           <div className="footer-note">
             <span>Built on</span>
