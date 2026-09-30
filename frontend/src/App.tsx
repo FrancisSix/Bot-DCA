@@ -9,7 +9,7 @@ import {
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { formatUnits, parseEther, maxUint256 } from "viem";
+import { formatUnits, parseEther, parseUnits, maxUint256 } from "viem";
 import { BOT_DCA, NATIVE, USDT, WBOT, ROUTER, V3_FACTORY } from "./lib/constants";
 import { BOT_DCA_ABI, ERC20_ABI, ROUTER_ABI, V3_ABI } from "./lib/abi";
 import logo from "./logo.svg";
@@ -339,11 +339,31 @@ export default function App() {
     }
   }
 
-  function create() {
-    const amt = parseEther(amount || "0");
-    const n = BigInt(numIntervals);
+  async function create() {
+    if (chain && chain.id !== 968) {
+      pushToast(`Wrong network (chain ${chain.id}). Switch to BOT Chain Testnet (968).`, "error");
+      return;
+    }
+    // Pre-flight: confirm a contract is actually deployed at the configured address,
+    // otherwise the write targets an empty address and reverts for an opaque reason.
+    try {
+      const code = await publicClient?.getCode({ address: BOT_DCA });
+      if (!code || code === "0x") {
+        pushToast(
+          `No DCA contract at ${BOT_DCA.slice(0, 10)}… on chain ${chain?.id ?? "?"} — check VITE_DCA_ADDRESS.`,
+          "error"
+        );
+        return;
+      }
+    } catch {
+      /* fall through; the write will surface any real error */
+    }
+
+    // Amount is denominated in the input token: BOT is 18dp, USDT is 6dp.
     const tokenIn = direction === "in" ? NATIVE : USDT;
     const tokenOut = direction === "in" ? USDT : NATIVE;
+    const amt = parseUnits(amount || "0", tokenDecimals(tokenIn));
+    const n = BigInt(numIntervals);
     run(
       () =>
         writeContractAsync({
