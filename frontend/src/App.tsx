@@ -267,7 +267,10 @@ export default function App() {
   const totalNum = amountNum * numIntervals;
   const total = totalNum.toString();
 
-  const usdtPerBot = priceData ? Number((priceData as bigint[])[1]) / 1e6 : null;
+  // Quote estimates from the V3 market price (what the contract actually executes via);
+  // fall back to the V2 route quote only if V3 is unavailable. The raw V2 pool is
+  // persistently mispriced on this chain and would overstate estimates.
+  const usdtPerBot = displayPrice;
   const estOutput =
     usdtPerBot && amountNum > 0
       ? direction === "in"
