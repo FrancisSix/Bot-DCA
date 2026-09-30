@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bot-DCA — Permissionless Dollar-Cost Averaging on BOT Chain</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --ink: #14181f; --muted: #5b6472; --line: #e3e7ee;
+    --brand: #10a37f; --brand-dark: #0d8c6b;
+  }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.55; }
+  .page { position: relative; page-break-after: always; padding: 22mm 20mm; }
+  .page:last-child { page-break-after: auto; }
+  h1 { font-size: 26pt; line-height: 1.15; letter-spacing: -0.5px; }
+  h2 { font-size: 15pt; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--brand); }
+  h3 { font-size: 11.5pt; margin: 12px 0 4px; }
+  p { margin: 6px 0; }
+  ul { margin: 6px 0 6px 18px; }
+  li { margin: 3px 0; }
+  .muted { color: var(--muted); }
+  .kicker { text-transform: uppercase; letter-spacing: 2.5px; font-size: 8.5pt; color: var(--brand-dark); font-weight: 700; margin-bottom: 10px; }
+  .lead { font-size: 12pt; color: var(--muted); margin-top: 10px; max-width: 150mm; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .card b { display: block; margin-bottom: 2px; }
+  .kv { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .kv td { border-top: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+  .kv td:first-child { font-weight: 600; width: 44mm; }
+  code { font-family: Consolas, monospace; font-size: 9pt; background: #f4f6f9; padding: 1px 4px; border-radius: 4px; }
+  .mono { font-family: Consolas, monospace; font-size: 9pt; }
+  table.data { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  table.data th { text-align: left; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 2px solid var(--ink); padding: 5px 8px; }
+  table.data td { border-bottom: 1px solid var(--line); padding: 6px 8px; }
+  .foot { position: absolute; bottom: 10mm; left: 20mm; right: 20mm; display: flex; justify-content: space-between; font-size: 8.5pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: 4px; }
+  .cover { display: flex; flex-direction: column; justify-content: center; height: 257mm; }
+  .badge { display: inline-block; border: 1px solid var(--brand); color: var(--brand-dark); border-radius: 999px; padding: 2px 10px; font-size: 8.5pt; font-weight: 700; letter-spacing: 1px; }
+  .arch { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-top: 10px; background: #fafbfd; }
+  .arch .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .arch .box { border: 1.5px solid var(--brand-dark); border-radius: 8px; padding: 6px 10px; font-weight: 600; font-size: 9.5pt; background: #fff; }
+  .arch .arrow { color: var(--brand-dark); font-weight: 700; }
+  .note { border-left: 3px solid var(--brand); background: #f4faf8; padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<section class="page">
+  <div class="cover">
+    <div class="kicker">Whitepaper · v1.0 · September 2026</div>
+    <h1>Bot&#8209;DCA<br>Permissionless Dollar&#8209;Cost Averaging on BOT&nbsp;Chain</h1>
+    <p class="lead">A non-custodial savings automation protocol: lock a budget once, and an open keeper network executes your recurring BOT⇄USDT swaps — every fill provable on-chain, no operator ever touching user funds.</p>
+    <p style="margin-top:22px"><span class="badge">LIVE ON BOT CHAIN TESTNET</span></p>
+    <table class="kv" style="max-width:150mm; margin-top:26px">
+      <tr><td>Contract (testnet)</td><td class="mono">0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895 <span class="muted">(verified on BOTScan)</span></td></tr>
+      <tr><td>Chain</td><td>BOT Chain Testnet · chain ID 968 · 0.75s blocks · ~$0.06 gas</td></tr>
+      <tr><td>Stack</td><td>Solidity ≥0.8.20 (Hardhat) · Node/viem keeper · React + wagmi dApp</td></tr>
+      <tr><td>Repositories</td><td class="mono">github.com/FrancisSix/Bot-DCA</td></tr>
+      <tr><td>Status</td><td>Deployed, verified, end-to-end tested with an autonomous keeper</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>Bot-DCA Whitepaper</span><span>botchain.ai</span></div>
+</section>
+
+<!-- ============ 1. ABSTRACT + PROBLEM ============ -->
+<section class="page">
+  <h2>1 · Abstract</h2>
+  <p>Bot-DCA turns dollar-cost averaging — buying a fixed amount of an asset on a fixed schedule — into a smart-contract primitive on BOT Chain. A user deposits a budget once into the <b>BotDCA</b> contract, specifying an amount per interval, an interval length, a number of intervals, and a slippage tolerance. An open, permissionless keeper network monitors due positions and executes the swaps through the chain's BDEX Uniswap V2/V3 venues, earning a small fee (0.1%) per fill. The contract holds the funds, enforces every constraint, and credits output tokens to the position. Nobody — not the team, not a keeper — can misappropriate deposits, censor execution, or alter terms after creation.</p>
+
+  <h2>2 · Problem</h2>
+  <p>Recurring-buy automation exists on centralized exchanges, but on-chain DCA faces three structural problems:</p>
+  <div class="grid2">
+    <div class="card"><b>1. Custody risk</b>Centralized auto-invest requires depositing funds with an operator who controls timing and custody.</div>
+    <div class="card"><b>2. Automation is privileged</b>Typical on-chain automation relies on a single operator's server; if it stops, your strategy stops.</div>
+    <div class="card"><b>3. Thin-liquidity pricing</b>On a young chain, AMM pools drift; naive DCA either overpays or reverts without on-chain price guards.</div>
+    <div class="card"><b>4. Opaque execution</b>Users can't verify that scheduled buys executed at fair prices without reading raw events.</div>
+  </div>
+  <p style="margin-top:8px">Bot-DCA addresses all four: funds are held by the contract itself; <i>anyone</i> can execute a due position (so automation has no single point of failure); minimum-output amounts are computed on-chain from live pool state; and every fill is recorded as an on-chain execution record with its exact input/output amounts.</p>
+  <div class="foot"><span>Bot-DCA Whitepaper</span><span>2 / 6</span></div>
+</section>
+
+<!-- ============ 3. DESIGN ============ -->
+<section class="page">
+  <h2>3 · Protocol Design</h2>
+
+  <h3>3.1 Positions</h3>
+  <p>A position is created with <code>createPosition(tokenIn, tokenOut, amountPerInterval, intervalSeconds, numIntervals, slippageBps)</code>, paying the full budget up front (native BOT via <code>msg.value</code>, or USDT via <code>transferFrom</code>). The contract validates terms against on-chain bounds (min interval, max intervals, max slippage) and stores the position; creation is atomic and non-custodial by construction.</p>
+
+  <h3>3.2 Permissionless execution</h3>
+  <p>Any address may call <code>execute(id)</code> (or <code>executeWithPath(id, path)</code> for multi-hop routes) once a position is due. The contract itself:</p>
+  <ul>
+    <li>verifies the position is active, incomplete, and due;</li>
+    <li>computes a <b>minimum output</b> — from the V3 pool's live <code>slot0</code> price when using V3, or the V2 router's quoted path output — scaled by the user's slippage tolerance;</li>
+    <li>swaps exactly <code>amountPerInterval</code> through the configured venue;</li>
+    <li>deducts the keeper fee (0.1% of output) and credits the remainder to the position's accumulator;</li>
+    <li>writes an immutable execution record <code>(timestamp, amountIn, amountOut)</code> and marks completion after the final interval.</li>
+  </ul>
+  <p>Because execution is permissionless, keepers compete redundantly: multiple independent keepers can run simultaneously without coordination, and a stalled keeper cannot strand a position.</p>
+
+  <h3>3.3 Execution venue</h3>
+  <p>The default venue is BDEX V3 (0.30% WBOT/USDT pool), selected after observing material staleness in the V2 pool on testnet. The venue and fee tier are owner-tunable parameters, and V3 output in native BOT is unwrapped from WBOT inside the same transaction. Native input is wrapped via the router; the contract never holds a stale approval beyond what each swap needs.</p>
+
+  <h3>3.4 User exits</h3>
+  <ul>
+    <li><code>withdraw(id)</code> — claim accumulated output tokens at any time;</li>
+    <li><code>cancel(id)</code> — refund the unspent budget pro-rata (plus any accrued output) and close the position.</li>
+  </ul>
+  <div class="foot"><span>Bot-DCA Whitepaper</span><span>3 / 6</span></div>
+</section>
+
+<!-- ============ 4. ARCHITECTURE ============ -->
+<section class="page">
+  <h2>4 · System Architecture</h2>
+  <div class="arch">
+    <div class="row"><span class="box">User (React + wagmi dApp)</span><span class="arrow">→ create / approve / withdraw / cancel</span><span class="box">BotDCA contract</span></div>
+    <div class="row"><span class="box">Keeper(s) · Node + viem</span><span class="arrow">→ poll isDue → simulate → execute → fee</span><span class="box">BDEX V2 / V3 routers</span></div>
+    <div class="row"><span class="muted" style="font-size:9pt">Windows scheduled-task supervisor ships in-repo: auto-start at logon, 10-min cadence check, mutex-guarded so only one supervisor instance runs.</span></div>
+  </div>
+  <div class="grid2" style="margin-top:12px">
+    <div class="card"><b>Contracts (Solidity / Hardhat)</b>BotDCA core with OpenZeppelin ReentrancyGuard + Ownable; interfaces for Uniswap V2 router and V3 SwapRouter/factory/pool. 10/10 tests passing against mocked venues.</div>
+    <div class="card"><b>Keeper (Node + viem)</b>Polls <code>nextId</code>/<code>isDue</code>, simulates each execution before sending, retries with backoff, logs a heartbeat. Fully stateless — safe to run many in parallel.</div>
+    <div class="card"><b>dApp (React + wagmi + Vite)</b>Create/manage positions, live V3-derived pricing, per-position execution history. Pre-flight checks: network guard, contract-presence check, decimal-correct amounts.</div>
+    <div class="card"><b>Operations</b>One-command deploy + verification scripts; explorer-verified sources; read-only inspection tooling; E2E script that drives a real position to completion.</div>
+  </div>
+
+  <h3>4.1 Security model</h3>
+  <ul>
+    <li><b>No custody pathway:</b> the contract has no admin transfer of user funds; owner functions tune parameters only (bounds, fee ≤1%, venue, pause).</li>
+    <li><b>Reentrancy-guarded</b> state changes; swaps and accounting are atomic per interval.</li>
+    <li><b>Slippage enforcement on-chain:</b> a fill that cannot meet the user's minimum output reverts — the user's budget is never spent at an arbitrarily bad price.</li>
+    <li><b>Redundant keepers:</b> execution rights are open; the fee (0.1%) is the only incentive needed to sustain the network.</li>
+    <li><b>Pause switch:</b> a global pause exists for incident response; it cannot move funds, only halt new activity.</li>
+  </ul>
+  <div class="foot"><span>Bot-DCA Whitepaper</span><span>4 / 6</span></div>
+</section>
+
+<!-- ============ 5. TESTNET RESULTS ============ -->
+<section class="page">
+  <h2>5 · Live Testnet Results</h2>
+  <p>The full loop was exercised on BOT Chain testnet with an autonomous keeper and no manual intervention between creation and completion:</p>
+  <table class="data">
+    <tr><th>Position</th><th>Strategy</th><th>Result</th></tr>
+    <tr><td>#3</td><td>Buy 0.5 BOT × 3 @ 10s intervals (BOT→USDT)</td><td>3/3 executed at t+17s/34s/46s; accrued 15.4625 USDT; avg <b>$10.3083/BOT</b> vs market $10.3186 (−0.10%)</td></tr>
+    <tr><td>#5</td><td>Buy 200 USDT × 3 @ 10s (USDT→BOT)</td><td>3/3 executed; received ≈19.2470 BOT per interval (≈ $10.39/BOT effective)</td></tr>
+    <tr><td>#1/#4/#6</td><td>1–5 BOT × 3 @ 10s (BOT→USDT)</td><td>All completed; per-interval outputs within tight variance of spot</td></tr>
+  </table>
+  <div class="note"><b>Interpretation:</b> a fresh wallet can deposit once and watch a complete multi-interval strategy execute itself in under a minute, with realized prices within 0.1% of the V3 market price and full on-chain auditability of every fill.</div>
+
+  <h3>5.1 Contract parameters (live, testnet)</h3>
+  <table class="kv">
+    <tr><td>minInterval</td><td>10 seconds (testnet setting for fast iteration)</td></tr>
+    <tr><td>maxIntervals</td><td>1,000</td></tr>
+    <tr><td>maxSlippageBps</td><td>1,000 (10%) ceiling; user chooses per position</td></tr>
+    <tr><td>keeperFeeBps</td><td>10 (0.1% of output per fill)</td></tr>
+    <tr><td>paused</td><td>false</td></tr>
+    <tr><td>Default venue</td><td>V3, fee tier 0.30%</td></tr>
+  </table>
+
+  <h3>5.2 Roadmap</h3>
+  <ul>
+    <li><b>Now:</b> testnet-hardened contracts, keeper supervision, dApp with live pricing and execution history.</li>
+    <li><b>Next:</b> mainnet (chain 677) deployment; keeper fee auctions; multi-hop V3 routes; top-up without recreating.</li>
+    <li><b>Later:</b> additional output assets beyond USDT; strategy templates (buy-the-dip modifiers); indexer-backed analytics UI.</li>
+  </ul>
+  <div class="foot"><span>Bot-DCA Whitepaper</span><span>5 / 6</span></div>
+</section>
+
+<!-- ============ 6. CLOSING ============ -->
+<section class="page">
+  <h2>6 · Getting Started</h2>
+  <ul>
+    <li>dApp: any Vercel deployment of <code>frontend/</code> (auto-deploys from <code>main</code>)</li>
+    <li>Fund a wallet with testnet BOT (faucet: <code>faucet.botchain.ai</code>); USDT optional, per direction</li>
+    <li>Run your own keeper: <code>keeper/</code> — <code>npm i && npm run start</code>, or install the provided Windows scheduled task</li>
+    <li>Contracts: <code>contracts/</code> — Hardhat tests, deploy, verify, E2E scripts included</li>
+  </ul>
+
+  <h2 style="margin-top:18px">7 · Conclusion</h2>
+  <p>DCA is the most common investing habit in the world, and it deserves an on-chain form that is trust-minimized end to end: budget in the contract, terms immutable at creation, execution open to anyone, prices guarded on-chain, and every fill auditable forever. Bot-DCA demonstrates that this is practical today on BOT Chain — a verified contract, an open keeper that already runs unattended, and a dApp that makes the whole lifecycle visible. The protocol is live on testnet and ready for mainnet.</p>
+
+  <table class="kv" style="margin-top:16px">
+    <tr><td>Repo</td><td class="mono">github.com/FrancisSix/Bot-DCA</td></tr>
+    <tr><td>Explorer</td><td class="mono">scan.bohr.life/address/0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895</td></tr>
+    <tr><td>Contact</td><td>GitHub issues · FrancisSix</td></tr>
+  </table>
+  <p class="muted" style="margin-top:14px; font-size:9pt">This document describes software deployed to a public testnet for evaluation. Nothing here is financial advice; DCA strategies can lose value. Parameters quoted are live testnet values as of September 30, 2026.</p>
+  <div class="foot"><span>Bot-DCA Whitepaper</span><span>6 / 6</span></div>
+</section>
+
+</body>
+</html>
