@@ -187,12 +187,6 @@ export default function App() {
   // Prefer the V3 market price; fall back to the V2 route quote if V3 is unavailable.
   const displayPrice = marketPrice ?? routePrice;
   const price = displayPrice != null ? displayPrice.toFixed(4) : "—";
-  // Divergence between market and the V2 route the contract uses.
-  const routePenalty =
-    marketPrice != null && routePrice != null && marketPrice > 0
-      ? (routePrice - marketPrice) / marketPrice
-      : null;
-  const routeWarning = routePenalty != null && routePenalty > 0.02;
 
   const load = useCallback(async () => {
     if (!publicClient || !address) return;
@@ -464,14 +458,6 @@ export default function App() {
                 {price !== "—" ? `$${price}` : "—"} <span style={{ color: "var(--faint)", fontSize: 13, fontWeight: 500 }}>/ BOT</span>
               </span>
             </div>
-            {routeWarning && (
-              <div className="stat">
-                <span className="stat-label">V2 route vs market</span>
-                <span className="stat-value" style={{ color: "var(--amber)" }}>
-                  +{(routePenalty! * 100).toFixed(1)}% worse
-                </span>
-              </div>
-            )}
             <div className="stat">
               <span className="stat-label">Your positions</span>
               <span className="stat-value">{positions.length}</span>
