@@ -18,13 +18,13 @@ export const botChainMainnet = defineChain({
   blockExplorers: { default: { name: "BOTScan", url: "https://scan.botchain.ai" } },
 });
 
-const rpcUrl = import.meta.env.VITE_RPC_URL ?? "https://rpc.bohr.life";
+const rpcUrl = import.meta.env.VITE_RPC_URL ?? "https://rpc.botchain.ai";
 
 export const wagmiConfig = createConfig({
-  chains: [botChainTestnet, botChainMainnet],
+  chains: [botChainMainnet, botChainTestnet],
   connectors: [injected()],
   transports: {
-    [botChainTestnet.id]: http(rpcUrl),
-    [botChainMainnet.id]: http("https://rpc.botchain.ai"),
+    [botChainTestnet.id]: http("https://rpc.bohr.life"),
+    [botChainMainnet.id]: http(rpcUrl),
   },
 });

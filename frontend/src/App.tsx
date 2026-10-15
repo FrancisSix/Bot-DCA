@@ -337,8 +337,8 @@ export default function App() {
   }
 
   async function create() {
-    if (chain && chain.id !== 968) {
-      pushToast(`Wrong network (chain ${chain.id}). Switch to BOT Chain Testnet (968).`, "error");
+    if (chain && chain.id !== 677) {
+      pushToast(`Wrong network (chain ${chain.id}). Switch to BOT Chain Mainnet (677).`, "error");
       return;
     }
     // Pre-flight: confirm a contract is actually deployed at the configured address,
@@ -418,8 +418,8 @@ export default function App() {
             >
               {theme === "dark" ? "☀️" : "🌙"}
             </button>
-            <span className={`net-badge ${chain?.id === 968 ? "ok" : "warn"}`}>
-              {chain?.id === 968 ? "BOT Chain Testnet" : isConnected ? "Wrong network" : "Not connected"}
+            <span className={`net-badge ${chain?.id === 677 ? "ok" : "warn"}`}>
+              {chain?.id === 677 ? "BOT Chain Mainnet" : isConnected ? "Wrong network" : "Not connected"}
             </span>
             {!isConnected ? (
               <button className="btn btn-primary" onClick={() => connect({ connector: connectors[0] })}>
@@ -438,12 +438,12 @@ export default function App() {
       </header>
 
       <main className="container content">
-        {isConnected && chain && chain.id !== 968 && (
+        {isConnected && chain && chain.id !== 677 && (
           <div className="banner">
             <span>
-              You're on {chain.name ?? "an unsupported network"}. This dApp runs on BOT Chain Testnet.
+              You're on {chain.name ?? "an unsupported network"}. This dApp runs on BOT Chain Mainnet.
             </span>
-            <button onClick={() => switchChain({ chainId: 968 })}>Switch network</button>
+            <button onClick={() => switchChain({ chainId: 677 })}>Switch network</button>
           </div>
         )}
 
@@ -694,16 +694,16 @@ export default function App() {
           </div>
           <div className="footer-links">
             <a href="https://dev-docs.botchain.ai" target="_blank" rel="noreferrer">Docs</a>
-            <a href="https://scan.bohr.life" target="_blank" rel="noreferrer">Explorer</a>
+            <a href="https://scan.botchain.ai" target="_blank" rel="noreferrer">Explorer</a>
             <a href="https://www.botchain.ai" target="_blank" rel="noreferrer">BOT Chain</a>
           </div>
           <div className="footer-note" style={{ flexBasis: "100%", justifyContent: "center" }}>
             <span>DCA contract</span>
             <a
-              href={`https://scan.bohr.life/address/${BOT_DCA}`}
+              href={`https://scan.botchain.ai/address/${BOT_DCA}`}
               target="_blank"
               rel="noreferrer"
-              title={DCA_ADDRESS_IS_FALLBACK ? "VITE_DCA_ADDRESS missing/invalid — using the built-in testnet address" : BOT_DCA}
+              title={DCA_ADDRESS_IS_FALLBACK ? "VITE_DCA_ADDRESS missing/invalid — using the built-in mainnet address" : BOT_DCA}
             >
               {shortAddr(BOT_DCA)}
             </a>

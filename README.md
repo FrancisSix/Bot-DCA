@@ -8,7 +8,9 @@ A user escrows a `BOT`/`USDT` budget in `BotDCA.sol`. A permissionless keeper sw
 `amountPerInterval` of `tokenIn` every `intervalSeconds` until the budget is spent.
 Every swap is recorded on-chain and readable via `getExecutions(id)`.
 
-Contract (testnet): [`0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895`](https://scan.bohr.life/address/0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895?tab=contract) Â· chain `968` (`https://rpc.bohr.life`).
+Contract (mainnet): [`0xB250Af06080d27C7346c27885Dfe0f6207599ca0`](https://scan.botchain.ai/address/0xB250Af06080d27C7346c27885Dfe0f6207599ca0) · chain `677` (`https://rpc.botchain.ai`).
+
+Contract (testnet): [`0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895`](https://scan.bohr.life/address/0x6eB819d09EfAF3Eb3ce52C4D6db3da6B2Fa37895) · chain `968` (`https://rpc.bohr.life`).
 
 ## Problem
 
@@ -67,7 +69,15 @@ Source verified & published on BOTScan (`is_fully_verified: true`). Compiler: `s
 
 Live admin settings on the deployed contract: `minInterval = 10s`, `keeperFeeBps = 10` (0.1%), `maxSlippageBps = 1000` (10%).
 
-Testnet assets:
+Mainnet assets (chain 677):
+
+- USDT (6dp): `0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C`
+- WBOT (18dp): `0xD5452816194a3784dBa983426cCe7c122F4abd30`
+- V2 Router02: `0x1414eD29FdFD322c3c0a830330ed982E2D629e76`
+- V3 SwapRouter: `0x07032d47A1b9f8460cBeE9dC17c1d3E438693929`
+- V3 factory: `0x1C51c173323ec11BB4e3C4fD2314c225Dc4b5419`
+
+Testnet assets (chain 968):
 
 - USDT (6dp): `0x75edC9335175Fc0552D51D48439F229c10420fe3`
 - WBOT (18dp): `0xD5452816194a3784dBa983426cCe7c122F4abd30`
@@ -108,15 +118,20 @@ Read-only pair health:
 
 ```bash
 cd contracts && npx hardhat run scripts/smoke.ts --network botchain-testnet
+cd contracts && npx hardhat run scripts/smoke.ts --network botchain-mainnet
 ```
 
-Deploy your own contract:
+Deploy:
 
 ```bash
+# Testnet
 cd contracts && npx hardhat run scripts/deploy.ts --network botchain-testnet
+
+# Mainnet
+cd contracts && npx hardhat run scripts/deploy.ts --network botchain-mainnet
 ```
 
-Then point `keeper/.env` (`DCA_ADDRESS`) and `frontend/.env` (`VITE_DCA_ADDRESS`) at it.
+Then point `keeper/.env` (`DCA_ADDRESS`) and `frontend/.env` (`VITE_DCA_ADDRESS`) at it. For mainnet, also set `CHAIN_ID=677`, `RPC_URL=https://rpc.botchain.ai`, and `VITE_RPC_URL=https://rpc.botchain.ai`.
 
 Full lifecycle on live testnet (deploy/create/execute/withdraw):
 
@@ -137,6 +152,8 @@ Frontend:
 ```bash
 cd frontend && npm run dev   # http://localhost:5173
 ```
+
+Mainnet wallets: BOT is available via [BDEX](https://dex.botchain.ai). Chain `677`, RPC `https://rpc.botchain.ai`.
 
 Testnet wallets: use faucet tBOT (10/24h). Chain `968`, RPC `https://rpc.bohr.life`.
 
@@ -170,7 +187,7 @@ Deploying is safe to do without the keeper or deployer keys â€” the fronten
 
 ## Status
 
-Testnet-scoped. Not audited. Admin functions (`setMinInterval`, `setKeeperFeeBps`, `setPaused`) are currently single-key owner; move to multisig before mainnet. `keeperFeeBps` encourages third-party execution but does not guarantee liveness; run your own keeper in production.
+Deployed on BOT Chain mainnet (677) and testnet (968). Not audited. Admin functions (`setMinInterval`, `setKeeperFeeBps`, `setPaused`) are currently single-key owner; move to multisig before further production use. `keeperFeeBps` encourages third-party execution but does not guarantee liveness; run your own keeper in production.
 
 ## License
 
